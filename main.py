@@ -1,5 +1,5 @@
 # This imports the FastAPI class from the FastAPI package.
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException , status
 # Imports the BaseModel class from the Pydantic library.
 # Pydantic is responsible for data validation and data parsing in FastAPI.
 from pydantic import BaseModel,EmailStr
@@ -70,3 +70,114 @@ def add_student(student : Student):
     cursor.close()
     conn.close()
     return {"message" : "Student added successfully"}
+
+
+# To fetch one student by ID
+@app.get("/students/{id}")
+def get_student(id:int):
+    conn = mysql.connector.connect(
+        host = "localhost",
+        user = "root",
+        password = "naim.123",
+        database = "college"
+    )
+    cursor = conn.cursor(dictionary=True)
+    query = """select * from cse where id = %s"""
+    # The comma in (id,) makes it a single-element tuple, which cursor.execute() expects for query parameters.
+    cursor.execute(query,(id,))
+    Student = cursor.fetchone()
+    # Checks whether fetchone() returned None
+    if not Student:
+        # If no matching student exists:
+        # FastAPI stops executing the function and returns an HTTP 404 Not Found response:
+        raise HTTPException(
+            status_code= status.HTTP_404_NOT_FOUND,
+            detail= f"Course with id {id} was not found"
+        )
+    cursor.close()
+    conn.close()
+
+    return Student
+
+
+# To delete a record by its id
+@app.delete("/students/{id}")
+def delete_student(id : int):
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="naim.123",
+        database="college"
+    )
+    cursor = conn.cursor(dictionary=True)
+    # Check if the student exists
+    cursor.execute("SELECT * FROM cse WHERE id = %s", (id,))
+    student = cursor.fetchone()
+    if not student:
+        cursor.close()
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Student with id {id} was not found"
+        )
+    # Delete the student
+    cursor.execute("DELETE FROM cse WHERE id = %s", (id,))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {"message": f"Student with id {id} deleted successfully"}
+
+
+class StudentPut(BaseModel):
+    name : str
+    email : EmailStr
+    dept : str
+
+# To update a record by ID
+@app.put("/students/{id}")
+def update_student(id:int , student:StudentPut):
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="naim.123",
+        database="college"
+    )
+    cursor = conn.cursor(dictionary=True)
+
+    # Check if the student exists
+    cursor.execute("SELECT * FROM cse WHERE id = %s", (id,))
+    existing_student = cursor.fetchone()
+
+    if not existing_student:
+        cursor.close()
+        conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Student with id {id} was not found"
+        )
+    # Update the student
+    query = """
+    UPDATE cse
+    SET name = %s,
+        email = %s,
+        dept = %s
+    WHERE id = %s
+    """
+    values = (
+        student.name,
+        student.email,
+        student.dept,
+        id
+    )
+    cursor.execute(query, values)
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {
+        "message": f"Student with id {id} updated successfully"
+    }
