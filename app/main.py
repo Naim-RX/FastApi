@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException , status, Depends
 from pydantic import BaseModel,EmailStr
 # This imports the MySQL Connector library.
 import mysql.connector
-from . import model
+from . import model,schema
 from sqlalchemy.orm import Session
 from .database import engine , get_db
 
@@ -193,5 +193,19 @@ def update_student(id:int , student:StudentPut):
 
 
 @app.get("/bba")
-def course():
+def course(db:Session = Depends(get_db)):
     return {"status" : "sqlalchemy orm working"}
+
+@app.post("/BBaStudent")
+def get_students(student: schema.Student, db: Session = Depends(get_db)):
+    new_student=model.Student(
+        id = student.id,
+        name = student.name,
+        email = student.email,
+        dept = student.dept
+    )
+    db.add(new_student)
+    db.commit()
+    db.refresh(new_student)
+
+    return new_student
