@@ -1,13 +1,20 @@
 # This imports the FastAPI class from the FastAPI package.
-from fastapi import FastAPI, HTTPException , status
+from fastapi import FastAPI, HTTPException , status, Depends
 # Imports the BaseModel class from the Pydantic library.
 # Pydantic is responsible for data validation and data parsing in FastAPI.
 from pydantic import BaseModel,EmailStr
 # This imports the MySQL Connector library.
 import mysql.connector
+from . import model
+from sqlalchemy.orm import Session
+from .database import engine , get_db
+
 
 # This creates an instance (object) of the FastAPI application.
 app = FastAPI()
+model.Base.metadata.create_all(bind = engine)
+
+
 
 # This is called a decorator.
 @app.get("/students")
@@ -181,3 +188,10 @@ def update_student(id:int , student:StudentPut):
     return {
         "message": f"Student with id {id} updated successfully"
     }
+
+
+
+
+@app.get("/bba")
+def course():
+    return {"status" : "sqlalchemy orm working"}
