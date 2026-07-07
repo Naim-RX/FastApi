@@ -193,19 +193,33 @@ def update_student(id:int , student:StudentPut):
 
 
 @app.get("/bba")
+#     This defines the function that handles the request.
+# Session is SQLAlchemy's database session. A session lets you communicate with the database.
+# Depends(get_db)
+# FastAPI automatically calls the get_db() function.
 def course(db:Session = Depends(get_db)):
     return {"status" : "sqlalchemy orm working"}
 
 @app.post("/BBaStudent")
+# FastAPI expects JSON from the client.
+# FastAPI creates a SQLAlchemy database session and passes it to the function.
 def get_students(student: schema.Student, db: Session = Depends(get_db)):
+#     This creates a new SQLAlchemy model object.
+# Nothing has been inserted into MySQL yet.
+# It is simply a Python object.
     new_student=model.Student(
         id = student.id,
         name = student.name,
         email = student.email,
         dept = student.dept
     )
+#     Adds the object to the SQLAlchemy session.
+# At this point, the data is not yet stored in MySQL.
+# Think of it as placing the new record into a queue of pending changes.
     db.add(new_student)
+    # Now the record is permanently stored in the database.
     db.commit()
+    # Reloads the object from the database
     db.refresh(new_student)
 
     return new_student
