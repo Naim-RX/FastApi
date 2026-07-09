@@ -12,9 +12,6 @@ from .database import engine , get_db
 
 # This creates an instance (object) of the FastAPI application.
 app = FastAPI()
-model.Base.metadata.create_all(bind = engine)
-
-
 
 # This is called a decorator.
 @app.get("/students")
@@ -192,6 +189,8 @@ def update_student(id:int , student:StudentPut):
 
 
 
+model.Base.metadata.create_all(bind = engine)
+
 @app.get("/bba")
 #     This defines the function that handles the request.
 # Session is SQLAlchemy's database session. A session lets you communicate with the database.
@@ -223,3 +222,77 @@ def get_students(student: schema.Student, db: Session = Depends(get_db)):
     db.refresh(new_student)
 
     return new_student
+
+@app.get("/BBaStudent/{id}")
+def get_student(id: int, db: Session = Depends(get_db)):
+    student = db.query(model.Student).filter(model.Student.id == id).first()
+
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail= f"Student not found"
+        )
+
+    return student
+
+
+# Handles PUT requests to update an existing student using their ID.
+@app.put("/BBaStudent/{id}")
+def update_student(
+    # Receives the student ID from the URL.
+    id: int,
+
+    # Receives and validates the JSON request body using the Student schema.
+    updated_student: schema.Student,
+
+    # Creates and injects a SQLAlchemy database session.
+    db: Session = Depends(get_db)
+):
+    # Creates a query to find the student with the given ID.
+    student = db.query(model.Student).filter(model.Student.id == id)
+
+    # Executes the query and checks whether the student exists.
+    if student.first() is None:
+        # Raises a 404 error if no matching student is found.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found"
+        )
+
+    # Converts the Pydantic model into a dictionary and excludes the ID.
+    update_data = updated_student.model_dump(exclude={"id"})
+
+    # Updates the matching database row with the new values.
+    student.update(update_data, synchronize_session=False)
+
+    # Saves the changes permanently to the database.
+    db.commit()
+
+    # Retrieves and returns the updated student record.
+    return student.first()
+
+
+
+# Delete student using ID
+@app.delete("/BBaStudent/{id}")
+def delete_student(id: int, db: Session = Depends(get_db)):
+    
+    # Creates a query to find the student with the given ID.
+    student = db.query(model.Student).filter(model.Student.id == id)
+
+    # Executes the query and checks whether the student exists.
+    if student.first() is None:
+        # Raises a 404 error if no matching student is found.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student not found"
+        )
+
+    # Deletes the matching student record.
+    student.delete(synchronize_session=False)
+
+    # Permanently saves the changes to the database.
+    db.commit()
+
+    # Returns a success message.
+    return {"message": "Student record deleted successfully"}
