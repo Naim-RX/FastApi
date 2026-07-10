@@ -199,7 +199,7 @@ model.Base.metadata.create_all(bind = engine)
 def course(db:Session = Depends(get_db)):
     return {"status" : "sqlalchemy orm working"}
 
-@app.post("/BBaStudent")
+@app.post("/BBaStudent", response_model=schema.studentResponse)
 # FastAPI expects JSON from the client.
 # FastAPI creates a SQLAlchemy database session and passes it to the function.
 def get_students(student: schema.Student, db: Session = Depends(get_db)):
@@ -207,10 +207,7 @@ def get_students(student: schema.Student, db: Session = Depends(get_db)):
 # Nothing has been inserted into MySQL yet.
 # It is simply a Python object.
     new_student=model.Student(
-        id = student.id,
-        name = student.name,
-        email = student.email,
-        dept = student.dept
+        **student.model_dump()
     )
 #     Adds the object to the SQLAlchemy session.
 # At this point, the data is not yet stored in MySQL.
@@ -223,7 +220,7 @@ def get_students(student: schema.Student, db: Session = Depends(get_db)):
 
     return new_student
 
-@app.get("/BBaStudent/{id}")
+@app.get("/BBaStudent/{id}",response_model= schema.studentResponse)
 def get_student(id: int, db: Session = Depends(get_db)):
     student = db.query(model.Student).filter(model.Student.id == id).first()
 
@@ -237,20 +234,17 @@ def get_student(id: int, db: Session = Depends(get_db)):
 
 
 # Handles PUT requests to update an existing student using their ID.
-@app.put("/BBaStudent/{id}")
+@app.put("/BBaStudent/{id}",response_model=schema.studentResponse)
 def update_student(
     # Receives the student ID from the URL.
     id: int,
-
     # Receives and validates the JSON request body using the Student schema.
     updated_student: schema.Student,
-
     # Creates and injects a SQLAlchemy database session.
     db: Session = Depends(get_db)
 ):
     # Creates a query to find the student with the given ID.
     student = db.query(model.Student).filter(model.Student.id == id)
-
     # Executes the query and checks whether the student exists.
     if student.first() is None:
         # Raises a 404 error if no matching student is found.
@@ -258,16 +252,12 @@ def update_student(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student not found"
         )
-
     # Converts the Pydantic model into a dictionary and excludes the ID.
     update_data = updated_student.model_dump(exclude={"id"})
-
     # Updates the matching database row with the new values.
     student.update(update_data, synchronize_session=False)
-
     # Saves the changes permanently to the database.
     db.commit()
-
     # Retrieves and returns the updated student record.
     return student.first()
 
