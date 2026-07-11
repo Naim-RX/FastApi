@@ -11,3 +11,6 @@ def hash_password(password: str):
     # Hashes the plain-text password and returns the generated password hash.
     # The hash should be stored in the database instead of the original password.
     return password_hash.hash(password)
+
+def verify_password(plain_password,hashed_password):
+    return password_hash.verify(plain_password,hashed_password)

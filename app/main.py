@@ -8,7 +8,7 @@ import mysql.connector
 from . import model,schema
 from sqlalchemy.orm import Session
 from .database import engine , get_db
-from . routers import bbaStudent
+from . routers import bbaStudent,auth
 
 
 # This creates an instance (object) of the FastAPI application.
@@ -205,3 +205,4 @@ def course(db:Session = Depends(get_db)):
 #Fastapi using sql alchemy
 
 app.include_router(bbaStudent.router)
+app.include_router(auth.router)

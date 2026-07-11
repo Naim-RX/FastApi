@@ -10,3 +10,8 @@ class studentResponse(Student):
     id : int
     class Config:
         model_config = ConfigDict(from_attributes=True)
+
+#this is for verifying hashed password
+class UserLogin(BaseModel):
+    email : EmailStr
+    password : str

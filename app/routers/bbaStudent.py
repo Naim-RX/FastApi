@@ -3,9 +3,12 @@ from .. import model,schema
 from sqlalchemy.orm import Session
 from ..database import engine , get_db
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/BBaStudent",
+    tags= ['BBA']
+    )
 
-@router.post("/BBaStudent", response_model=schema.studentResponse)
+@router.post("/", response_model=schema.studentResponse)
 # FastAPI expects JSON from the client.
 # FastAPI creates a SQLAlchemy database session and passes it to the function.
 def get_students(student: schema.Student, db: Session = Depends(get_db)):
@@ -26,7 +29,7 @@ def get_students(student: schema.Student, db: Session = Depends(get_db)):
 
     return new_student
 
-@router.get("/BBaStudent/{id}",response_model= schema.studentResponse)
+@router.get("/{id}",response_model= schema.studentResponse)
 def get_student(id: int, db: Session = Depends(get_db)):
     student = db.query(model.Student).filter(model.Student.id == id).first()
 
@@ -40,7 +43,7 @@ def get_student(id: int, db: Session = Depends(get_db)):
 
 
 # Handles PUT requests to update an existing student using their ID.
-@router.put("/BBaStudent/{id}",response_model=schema.studentResponse)
+@router.put("/{id}",response_model=schema.studentResponse)
 def update_student(
     # Receives the student ID from the URL.
     id: int,
@@ -70,7 +73,7 @@ def update_student(
 
 
 # Delete student using ID
-@router.delete("/BBaStudent/{id}")
+@router.delete("/{id}")
 def delete_student(id: int, db: Session = Depends(get_db)):
     
     # Creates a query to find the student with the given ID.
