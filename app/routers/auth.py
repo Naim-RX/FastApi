@@ -3,6 +3,7 @@ from .. import model,schema,utils,database,oauth2
 from sqlalchemy.orm import Session
 from ..database import engine , get_db
 from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
 # Creates an API router and groups the endpoint under Authentication.
 router = APIRouter(
     tags=["Authentication"]
@@ -11,12 +12,12 @@ router = APIRouter(
 # Handles login requests.
 @router.post("/login")
 def login(
-    user_credentials: schema.UserLogin,
+    user_credentials: OAuth2PasswordRequestForm=Depends(),
     db: Session = Depends(get_db)
 ):
     # Finds a user using the provided email.
     user = db.query(model.Student).filter(
-        model.Student.email == user_credentials.email
+        model.Student.email == user_credentials.username
     ).first()
 
     # Checks whether the user exists.
