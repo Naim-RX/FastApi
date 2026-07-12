@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException , status, Depends,APIRouter
-from .. import model,schema,utils,database
+from .. import model,schema,utils,database,oauth2
 from sqlalchemy.orm import Session
 from ..database import engine , get_db
-
+from datetime import timedelta
 # Creates an API router and groups the endpoint under Authentication.
 router = APIRouter(
     tags=["Authentication"]
@@ -35,6 +35,21 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
+    
+    # Calls the create_access_token() function from the oauth2.py file.
+    access_token = oauth2.create_access_token(
+
+        # Adds the student's ID to the JWT payload as "user_id".
+        data={"user_id": user.id},
+
+        # Sets the token expiration duration using the value
+        # ACCESS_TOKEN_EXPIRE_MINUTES defined in oauth2.py.
+        expires_delta=timedelta(
+            minutes=oauth2.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    )
 
     # Temporary success response.
-    return {"message": "Successfully logged in"}
+    return {"message":access_token, "Token type": "Bearer"}
+
+    
