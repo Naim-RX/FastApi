@@ -5,6 +5,12 @@ import jwt
 # timedelta for adding time durations,
 # and timezone for working with UTC time.
 from datetime import datetime, timedelta, timezone
+from . import schema
+from jwt.exceptions import InvalidTokenError
+from fastapi import Depends,status,HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 # Secret key used to digitally sign the JWT token.
@@ -65,3 +71,23 @@ def create_access_token(
 
     # Returns the generated JWT access token.
     return encoded_jwt
+
+def verify_access_token(token:str , credentials_exception):
+    try :
+        payload = jwt.decode(token,SECRET_KEY , algorithms=[ALGORITHM])
+        id : str = payload.get("user_id")
+        if id is None:
+            raise credentials_exception
+        token_data = schema.TokenData
+
+    except InvalidTokenError:
+        raise credentials_exception
+    return token_data
+
+def get_current_user(token:str = Depends(oauth2_scheme)):
+    credential_exception = HTTPException(
+        status_code= status.HTTP_401_UNAUTHORIZED,
+        detail= "Could not validate Credential",
+        headers= {"WWW-Authenticate" : "Bearer"}
+    )
+    return verify_access_token(token, credential_exception)
